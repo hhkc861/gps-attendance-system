@@ -1,0 +1,19 @@
+{
+    // Indentation
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    // Type checking
+    "python.analysis.enableTypeCheckingRecommendation": true,
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.autoImportCompletions": true,
+    // Auto format on save
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "editor.formatOnSave": true,
+    // Language specific setting
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
+}
