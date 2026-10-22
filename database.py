@@ -1,17 +1,31 @@
-# Cấu hình kết nối cơ sở dữ liệu (SQLAlchemy / Database session)
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import os
 
-DATABASE_URL = "sqlite:///./gps_attendance.db"  # Có thể đổi sang PostgreSQL/MySQL
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+from models import Base
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+load_dotenv()
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg://attendance:attendance@localhost:5432/gps_attendance",
+)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def connect_database() -> None:
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+    Base.metadata.create_all(bind=engine)
+
+
+def close_database() -> None:
+    engine.dispose()
+
+
+def get_session() -> Session:
+    return SessionLocal()

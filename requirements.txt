@@ -1,3 +1,9 @@
-fastapi==0.110.0
-uvicorn==0.28.0
-pydantic==2.6.4
+fastapi
+uvicorn
+pydantic
+python-dotenv
+PyJWT
+argon2-cffi
+haversine
+SQLAlchemy>=2.0,<3.0
+psycopg[binary]>=3.2,<4.0

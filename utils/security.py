@@ -1,9 +1,32 @@
-# Xử lý mã hóa mật khẩu và tạo JWT Token
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from argon2 import PasswordHasher
+import jwt
+from dotenv import load_dotenv
+
+load_dotenv()
+
+password_hasher = PasswordHasher()
+
+
 def hash_password(password: str) -> str:
-    return "hashed_" + password
+    return password_hasher.hash(password)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return hashed_password == "hashed_" + plain_password
+    try:
+        return password_hasher.verify(hashed_password, plain_password)
+    except:
+        return False
 
-def create_access_token(data: dict) -> str:
-    return "eyJhbGciOiJIUzI1Ni..."
+
+def create_access_token(data: dict[str, Any]) -> str:
+    secret = os.getenv("JWT_SECRET")
+    if not secret or len(secret) < 32:
+        raise RuntimeError("JWT_SECRET must contain at least 32 characters")
+
+    payload = data.copy()
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(minutes=30)
+    return jwt.encode(payload, secret, algorithm="HS256")

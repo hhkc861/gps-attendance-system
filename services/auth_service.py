@@ -1,5 +1,5 @@
 def authenticate_user(login_data: dict):
-    # UC1: Xác thực thông tin và trả về token[cite: 1]
+    # UC1: Xác thực thông tin và trả về token
     return {
         "accessToken": "eyJhbGciOiJIUzI1Ni...",
         "tokenType": "Bearer",
@@ -9,10 +9,11 @@ def authenticate_user(login_data: dict):
             "code": "24021625",
             "fullName": "Nguyễn Văn A",
             "email": login_data.get("email"),
-            "role": "STUDENT"
-        }
+            "role": "STUDENT",
+        },
     }
 
+
 def logout_user():
-    # UC2: Đăng xuất[cite: 1]
+    # UC2: Đăng xuất
     return True
