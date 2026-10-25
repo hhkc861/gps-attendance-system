@@ -10,7 +10,7 @@ from utils.security import hash_password
 def _serialize_user(user: User) -> dict[str, Any]:
     return {
         "id": str(user.id),
-        "code": user.code,
+        "username": user.username,
         "fullName": user.full_name,
         "email": user.email,
         "role": user.role,
@@ -19,12 +19,12 @@ def _serialize_user(user: User) -> dict[str, Any]:
 
 
 def create_user(payload: dict[str, Any]) -> dict[str, Any]:
-    for field in ("code", "fullName", "email", "password"):
+    for field in ("username", "fullName", "email", "password"):
         if not payload.get(field):
             raise ValueError(f"{field} is required")
 
     user = User(
-        code=payload["code"],
+        username=payload["username"],
         full_name=payload["fullName"],
         email=payload["email"].lower(),
         password_hash=hash_password(payload["password"]),
@@ -50,7 +50,7 @@ def list_users(
         pattern = f"%{search}%"
         statement = statement.where(
             or_(
-                User.code.ilike(pattern),
+                User.username.ilike(pattern),
                 User.full_name.ilike(pattern),
                 User.email.ilike(pattern),
             )

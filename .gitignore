@@ -221,3 +221,6 @@ __marimo__/
 
 # draft files
 drafts/
+
+# macOS
+.DS_Store

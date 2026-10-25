@@ -1,81 +1,87 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer
-from sqlalchemy import String, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Float, ForeignKey
+from sqlalchemy import Integer, String, Table, UniqueConstraint
+from sqlalchemy.orm import (
+    Mapped,
+    declarative_base,
+    mapped_column,
+    relationship,
+)
 
 
-class Base(DeclarativeBase):
-    pass
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+Base = declarative_base()
+
+
+section_teachers = Table(
+    "section_teachers",
+    Base.metadata,
+    Column("section_id", ForeignKey("sections.id"), primary_key=True),
+    Column("teacher_user_id", ForeignKey("users.id"), primary_key=True),
+)
+
+
+section_students = Table(
+    "section_students",
+    Base.metadata,
+    Column("section_id", ForeignKey("sections.id"), primary_key=True),
+    Column("student_user_id", ForeignKey("users.id"), primary_key=True),
+)
 
 
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint(
-            "role IN ('ADMIN', 'LECTURER', 'STUDENT')",
+            "role IN ('ADMIN', 'teacher', 'STUDENT')",
             name="ck_users_role",
         ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="STUDENT")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=now_utc,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=now_utc,
+        onupdate=now_utc,
     )
 
 
-class Course(Base):
-    __tablename__ = "courses"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    credits: Mapped[int] = mapped_column(Integer, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-    )
-
-
-class ClassSection(Base):
-    __tablename__ = "class_sections"
+class Section(Base):
+    __tablename__ = "sections"
     __table_args__ = (
         UniqueConstraint(
-            "course_id",
             "section_code",
-            "semester",
-            "academic_year",
-            name="uq_class_sections_term",
+            name="uq_sections_section_code",
         ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
-    lecturer_user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False
+    section_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    teachers: Mapped[list[User]] = relationship(
+        secondary=section_teachers,
     )
-    section_code: Mapped[str] = mapped_column(String(50), nullable=False)
-    semester: Mapped[str] = mapped_column(String(50), nullable=False)
-    academic_year: Mapped[str] = mapped_column(String(20), nullable=False)
+    students: Mapped[list[User]] = relationship(
+        secondary=section_students,
+    )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=now_utc,
     )
 
 
@@ -83,13 +89,11 @@ class Enrollment(Base):
     __tablename__ = "enrollments"
 
     student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    class_id: Mapped[int] = mapped_column(
-        ForeignKey("class_sections.id"), primary_key=True
-    )
+    section_id: Mapped[int] = mapped_column(ForeignKey("sections.id"), primary_key=True)
     enrolled_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=now_utc,
     )
 
 
@@ -97,21 +101,16 @@ class AttendanceSession(Base):
     __tablename__ = "attendance_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    class_id: Mapped[int] = mapped_column(
-        ForeignKey("class_sections.id"), nullable=False
-    )
+    section_id: Mapped[int] = mapped_column(ForeignKey("sections.id"), nullable=False)
     center_lat: Mapped[float] = mapped_column(Float, nullable=False)
     center_lng: Mapped[float] = mapped_column(Float, nullable=False)
     radius_meters: Mapped[float] = mapped_column(Float, nullable=False)
-    start_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="OPEN")
+    start_time: Mapped[datetime] = mapped_column(DateTime(), nullable=False)
+    end_time: Mapped[datetime] = mapped_column(DateTime(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=now_utc,
     )
 
 
@@ -133,9 +132,9 @@ class AttendanceRecord(Base):
     distance_meters: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False)
     checked_in_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=now_utc,
     )
     is_manually_overridden: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False

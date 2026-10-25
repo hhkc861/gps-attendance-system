@@ -18,9 +18,9 @@ def create_user(user_request: dict):
         raise HTTPException(status_code=422, detail=str(error)) from error
     except IntegrityError as error:
         raise HTTPException(
-            status_code=409, detail="Mã người dùng hoặc email đã tồn tại"
+            status_code=409, detail="Username or email already exists"
         ) from error
-    return {"success": True, "message": "Tạo tài khoản thành công", "data": created}
+    return {"success": True, "message": "Account created successfully", "data": created}
 
 @router.get("")
 def get_users(
@@ -40,5 +40,5 @@ def get_users(
 @router.delete("/{id}")
 def delete_user(id: str):
     if not delete_user_service(id):
-        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
-    return {"success": True, "message": "Xóa tài khoản thành công"}
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {"success": True, "message": "Account deleted successfully"}

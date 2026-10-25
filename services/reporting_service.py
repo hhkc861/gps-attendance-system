@@ -1,9 +1,9 @@
 def get_student_attendance_history(student_id: str):
-    # UC10: Lịch sử điểm danh cá nhân
+    # UC10: Personal attendance history
     return [
         {
             "recordId": "uuid-record-id",
-            "sessionName": "Buổi học ngày 21/09/2026",
+            "sessionName": "Class session on 2026-09-21",
             "status": "PRESENT",
         }
     ]
@@ -12,7 +12,7 @@ def get_student_attendance_history(student_id: str):
 def override_attendance_status(
     session_id: str, student_id: str, status_val: str, reason: str
 ):
-    # UC12.2: Sửa trạng thái điểm danh thủ công
+    # UC12.2: Manually update an attendance status
     return {
         "sessionId": session_id,
         "studentId": student_id,

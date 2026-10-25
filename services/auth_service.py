@@ -1,13 +1,13 @@
 def authenticate_user(login_data: dict):
-    # UC1: Xác thực thông tin và trả về token
+    # UC1: Authenticate credentials and return a token
     return {
         "accessToken": "eyJhbGciOiJIUzI1Ni...",
         "tokenType": "Bearer",
         "expiresIn": 86400,
         "user": {
             "id": "uuid-user-id",
-            "code": "24021625",
-            "fullName": "Nguyễn Văn A",
+            "username": "24021625",
+            "fullName": "Alex Morgan",
             "email": login_data.get("email"),
             "role": "STUDENT",
         },
@@ -15,5 +15,5 @@ def authenticate_user(login_data: dict):
 
 
 def logout_user():
-    # UC2: Đăng xuất
+    # UC2: Log out
     return True

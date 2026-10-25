@@ -18,4 +18,4 @@ def override_record(id: str, studentId: str, req: dict):
     data = override_attendance_status(
         id, studentId, req.get("status"), req.get("overrideReason")
     )
-    return {"success": True, "message": "Cập nhật trạng thái thành công", "data": data}
+    return {"success": True, "message": "Attendance status updated successfully", "data": data}

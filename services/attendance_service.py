@@ -2,27 +2,17 @@ from haversine import haversine, Unit
 
 
 def open_session_db(class_id: str, request: dict):
-    # UC7: Mở phiên điểm danh
+    # UC7: Open an attendance session
     return {
         "sessionId": "uuid-session-id",
         "classId": class_id,
-        "status": "OPEN",
         "startTime": request.get("startTime"),
         "endTime": request.get("endTime"),
     }
 
 
-def close_session_db(session_id: str):
-    # UC8: Đóng phiên điểm danh
-    return {
-        "sessionId": session_id,
-        "status": "CLOSED",
-        "closedAt": "2026-09-21T08:10:00Z",
-    }
-
-
 def process_checkin(session_id: str, lat: float, lng: float):
-    # UC9: Xử lý check-in GPS
+    # UC9: Process GPS check-in
     allowed_radius = 100.0
 
     center = (21.038123, 105.782891)
