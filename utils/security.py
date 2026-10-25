@@ -30,3 +30,16 @@ def create_access_token(data: dict[str, Any]) -> str:
     payload = data.copy()
     payload["exp"] = datetime.now(timezone.utc) + timedelta(minutes=30)
     return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    secret = os.getenv("JWT_SECRET")
+    if not secret or len(secret) < 32:
+        raise RuntimeError("JWT_SECRET must contain at least 32 characters")
+
+    return jwt.decode(
+        token,
+        secret,
+        algorithms=["HS256"],
+        options={"require": ["exp", "sub"]},
+    )

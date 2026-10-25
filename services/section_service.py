@@ -1,5 +1,3 @@
-from typing import Any
-
 from sqlalchemy import select
 
 from database import get_session
@@ -9,7 +7,7 @@ from schemas.section_schema import SectionCreateRequest, SectionCreateResponse
 
 
 def create_section(request: SectionCreateRequest) -> SectionCreateResponse:
-    section_code = request.sectionCode.strip()
+    section_code = request.sectionCode
     teacher_usernames = request.teachers
     student_usernames = request.students
 

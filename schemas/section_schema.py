@@ -24,12 +24,22 @@ class SectionCreateRequest(BaseModel):
         default_factory=list,
     )
 
+    @field_validator("sectionCode")
+    @classmethod
+    def normalize(cls, section_code: str) -> str:
+        normalized_code = section_code.strip()
+        if not normalized_code:
+            raise ValueError("Class section code must not be blank")
+        return normalized_code
+
     @field_validator("teachers", "students")
     @classmethod
     def normalize_and_reject_duplicate_usernames(
         cls, usernames: list[str]
     ) -> list[str]:
         normalized_usernames = [username.strip() for username in usernames]
+        if any(not username for username in normalized_usernames):
+            raise ValueError("Usernames must not be blank")
         if len(normalized_usernames) != len(set(normalized_usernames)):
             raise ValueError("Usernames in the same list must be unique")
         return normalized_usernames
