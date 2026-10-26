@@ -1,21 +1,34 @@
-def get_student_attendance_history(student_id: str):
-    # UC10: Personal attendance history
-    return [
-        {
-            "recordId": "uuid-record-id",
-            "sessionName": "Class session on 2026-09-21",
-            "status": "PRESENT",
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from models import AttendanceSession, AttendanceRecord, User
+
+def get_section_attendance_report(db: Session, section_id: int):
+
+    sessions = db.scalars(
+        select(AttendanceSession).where(AttendanceSession.section_id == section_id)
+    ).all()
+
+    total_sessions = len(sessions)
+    session_ids = [s.id for s in sessions]
+
+    if total_sessions == 0:
+        return {
+            "sectionId": section_id,
+            "totalSessions": 0,
+            "reportData": []
         }
-    ]
 
+    records = db.scalars(
+        select(AttendanceRecord).where(AttendanceRecord.session_id.in_(session_ids))
+    ).all()
 
-def override_attendance_status(
-    session_id: str, student_id: str, status_val: str, reason: str
-):
-    # UC12.2: Manually update an attendance status
     return {
-        "sessionId": session_id,
-        "studentId": student_id,
-        "status": status_val,
-        "overrideReason": reason,
+        "sectionId": section_id,
+        "totalSessions": total_sessions,
+        "reportData": [
+            {
+                "recordCount": len(records),
+                "note": "Successfully connected to real data from AttendanceRecord table."
+            }
+        ]
     }
