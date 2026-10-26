@@ -1,10 +1,17 @@
-from fastapi import APIRouter
-from services.attendance_service import open_session_db
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+from database import get_session
+from services.attendance_service import process_gps_attendance
 
-router = APIRouter(prefix="/api", tags=["Sessions"])
+router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
 
+@router.post("", status_code=status.HTTP_200_OK)
+def mark_attendance(
+    session_id: int,
+    student_id: int,
+    latitude: float,
+    longitude: float,
+    db: Session = Depends(get_session)
+):
 
-@router.post("/classes/{id}/sessions", status_code=201)
-def open_session(id: str, req: dict):
-    result = open_session_db(id, req)
-    return {"success": True, "message": "Attendance session opened successfully", "data": result}
+    return process_gps_attendance(db, student_id, session_id, latitude, longitude)
