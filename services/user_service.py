@@ -4,6 +4,7 @@ from sqlalchemy import or_, select
 
 from database import get_session
 from models import User
+from schemas.user_schema import UserCreateRequest
 from utils.security import hash_password
 
 
@@ -12,23 +13,17 @@ def _serialize_user(user: User) -> dict[str, Any]:
         "id": str(user.id),
         "username": user.username,
         "fullName": user.full_name,
-        "email": user.email,
         "role": user.role,
         "createdAt": user.created_at,
     }
 
 
-def create_user(payload: dict[str, Any]) -> dict[str, Any]:
-    for field in ("username", "fullName", "email", "password"):
-        if not payload.get(field):
-            raise ValueError(f"{field} is required")
-
+def create_user(payload: UserCreateRequest) -> dict[str, Any]:
     user = User(
-        username=payload["username"],
-        full_name=payload["fullName"],
-        email=payload["email"].lower(),
-        password_hash=hash_password(payload["password"]),
-        role=payload.get("role", "STUDENT"),
+        username=payload.username,
+        full_name=payload.fullName,
+        password_hash=hash_password(payload.password),
+        role=payload.role,
     )
     with get_session() as session:
         session.add(user)
@@ -52,7 +47,6 @@ def list_users(
             or_(
                 User.username.ilike(pattern),
                 User.full_name.ilike(pattern),
-                User.email.ilike(pattern),
             )
         )
     statement = statement.offset((page_number - 1) * page_size).limit(page_size)
