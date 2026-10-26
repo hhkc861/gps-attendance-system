@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Literal, Optional
 
 from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Float, ForeignKey
 from sqlalchemy import Integer, String, Table, UniqueConstraint
@@ -16,6 +16,8 @@ def now_utc() -> datetime:
 
 
 Base = declarative_base()
+
+UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
 
 
 section_teachers = Table(
@@ -38,7 +40,7 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint(
-            "role IN ('ADMIN', 'teacher', 'STUDENT')",
+            "role IN ('ADMIN', 'TEACHER', 'STUDENT')",
             name="ck_users_role",
         ),
     )
@@ -47,7 +49,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False, default="STUDENT")
+    role: Mapped[UserRole] = mapped_column(
+        String(20), nullable=False, default="STUDENT"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(),
         nullable=False,

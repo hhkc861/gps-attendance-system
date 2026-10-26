@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 
 from database import get_session
-from models import User
+from models import User, UserRole
 from utils.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -15,7 +15,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 @dataclass(frozen=True)
 class AuthenticatedUser:
     id: int
-    role: str
+    role: UserRole
 
 
 def get_current_user(

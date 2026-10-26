@@ -1,24 +1,24 @@
-from typing import Any, Optional
+from typing import Optional
 
 from sqlalchemy import or_, select
 
 from database import get_session
 from models import User
-from schemas.user_schema import UserCreateRequest
+from schemas.user_schema import UserCreateRequest, UserResponse, UserRole
 from utils.security import hash_password
 
 
-def _serialize_user(user: User) -> dict[str, Any]:
-    return {
-        "id": str(user.id),
-        "username": user.username,
-        "fullName": user.full_name,
-        "role": user.role,
-        "createdAt": user.created_at,
-    }
+def _serialize_user(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        fullName=user.full_name,
+        role=user.role,
+        createdAt=user.created_at,
+    )
 
 
-def create_user(payload: UserCreateRequest) -> dict[str, Any]:
+def create_user(payload: UserCreateRequest) -> UserResponse:
     user = User(
         username=payload.username,
         full_name=payload.fullName,
@@ -33,11 +33,11 @@ def create_user(payload: UserCreateRequest) -> dict[str, Any]:
 
 
 def list_users(
-    role: Optional[str] = None,
+    role: Optional[UserRole] = None,
     search: Optional[str] = None,
     page_size: int = 100,
     page_number: int = 1,
-) -> list[dict[str, Any]]:
+) -> list[UserResponse]:
     statement = select(User)
     if role:
         statement = statement.where(User.role == role)
