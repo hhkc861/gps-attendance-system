@@ -1,7 +1,9 @@
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
+from schemas.user_schema import UserCreateRequest, UserCreateResponse
+from utils.auth import require_admin
 from services.user_service import (
     create_user as create_user_service,
     delete_user as delete_user_service,
@@ -10,15 +12,21 @@ from services.user_service import (
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
-@router.post("", status_code=201)
-def create_user(user_request: dict):
+@router.post(
+    "",
+    status_code=201,
+    response_model=UserCreateResponse,
+    dependencies=[Depends(require_admin)],
+    summary="Create an account",
+)
+def create_user(user_request: UserCreateRequest):
     try:
         created = create_user_service(user_request)
-    except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
     except IntegrityError as error:
+        if getattr(error.orig, "sqlstate", None) != "23505":
+            raise
         raise HTTPException(
-            status_code=409, detail="Username or email already exists"
+            status_code=409, detail="Username already exists"
         ) from error
     return {"success": True, "message": "Account created successfully", "data": created}
 
