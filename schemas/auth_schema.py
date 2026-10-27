@@ -36,6 +36,11 @@ class LoginRequest(BaseModel):
         return value
 
 
+class LogoutResponse(BaseModel):
+    success: Literal[True] = True
+    message: str = "Logout successful"
+
+
 class LoginData(BaseModel):
     accessToken: str = Field(
         title="Access token",

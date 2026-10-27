@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
-from schemas.auth_schema import LoginRequest, LoginResponse
-from services.auth_service import InvalidCredentialsError, authenticate_user, logout_user
+from fastapi import APIRouter, Depends, HTTPException, status
+from schemas.auth_schema import LoginRequest, LoginResponse, LogoutResponse
+from utils.auth import get_current_user
+from services.auth_service import InvalidCredentialsError, authenticate_user
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -35,7 +36,13 @@ def login(login_request: LoginRequest) -> LoginResponse:
         ) from error
 
 
-@router.post("/logout")
-def logout():
-    logout_user()
-    return {"success": True, "message": "Logout successful"}
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    summary="Log out the current session (UC2)",
+    description="Clear the token on the client. JWT remains valid until expiration.",
+    dependencies=[Depends(get_current_user)],
+    responses={401: {"description": "Token is missing, invalid or expired"}},
+)
+def logout() -> LogoutResponse:
+    return LogoutResponse()

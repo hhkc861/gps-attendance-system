@@ -39,8 +39,3 @@ def authenticate_user(login_data: LoginRequest) -> LoginData:
                 createdAt=user.created_at,
             ),
         )
-
-
-def logout_user():
-    # UC2: Log out
-    return True
