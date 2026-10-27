@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
-from schemas.session_schema import CheckInRequest, SessionCreateRequest
+from schemas.session_schema import CheckInRequest, CheckInResponse, SessionCreateRequest
 from services.session_service import open_session, process_checkin
 from utils.auth import AuthenticatedUser, get_current_user
 
@@ -67,10 +67,12 @@ def create_session(
 
 @router.post(
     "/{id}/check-in",
+    response_model=CheckInResponse,
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {
-            "description": "Check-in processed successfully"
+            "description": "Check-in processed successfully",
+            "model": CheckInResponse,
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "Session is not currently active"
@@ -102,7 +104,7 @@ def check_in(
         examples=[1],
     ),
     user: AuthenticatedUser = Depends(get_current_user),
-):
+) -> CheckInResponse:
     try:
         return process_checkin(
             session_id=id,
