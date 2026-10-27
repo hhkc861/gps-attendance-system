@@ -1,5 +1,8 @@
+from datetime import timezone
 from haversine import Unit, haversine
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from database import get_session
 from models import AttendanceRecord, AttendanceSession, Section, now_utc
 from schemas.session_schema import CheckInResponse
@@ -17,6 +20,11 @@ def open_session(
         section = db.get(Section, section_id)
         if not section:
             raise LookupError("Class section not found")
+
+        if start_time.tzinfo is not None:
+            start_time = start_time.astimezone(timezone.utc).replace(tzinfo=None)
+        if end_time.tzinfo is not None:
+            end_time = end_time.astimezone(timezone.utc).replace(tzinfo=None)
 
         session = AttendanceSession(
             section_id=section_id,
@@ -38,14 +46,25 @@ def process_checkin(session_id: int, student_id: int, lat: float, lng: float):
         if not session:
             raise LookupError("Session not found")
 
-        # Tính khoảng cách GPS theo Haversine
+        now = now_utc()
+        if now < session.start_time or now > session.end_time:
+            raise ValueError("Session is not currently active")
+
+        section = db.scalar(
+            select(Section)
+            .options(selectinload(Section.students))
+            .where(Section.id == session.section_id)
+        )
+        if not section or student_id not in {s.id for s in section.students}:
+            raise PermissionError("The student is not enrolled in this class section")
+
         center = (session.center_lat, session.center_lng)
         distance = round(haversine(center, (lat, lng), unit=Unit.METERS), 2)
 
-        status = "PRESENT" if distance <= session.radius_meters else "REJECTED_OUT_OF_RANGE"
-        now = now_utc()
+        status = (
+            "PRESENT" if distance <= session.radius_meters else "REJECTED_OUT_OF_RANGE"
+        )
 
-        # Tìm xem sinh viên đã có bản ghi chưa để tránh lỗi dính UniqueConstraint sập 500
         record = db.scalar(
             select(AttendanceRecord).where(
                 AttendanceRecord.session_id == session_id,
