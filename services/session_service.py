@@ -2,6 +2,7 @@ from haversine import Unit, haversine
 from sqlalchemy import select
 from database import get_session
 from models import AttendanceRecord, AttendanceSession, Section, now_utc
+from schemas.session_schema import CheckInResponse
 
 
 def open_session(
@@ -73,12 +74,18 @@ def process_checkin(session_id: int, student_id: int, lat: float, lng: float):
         db.commit()
         db.refresh(record)
 
-        return {
-            "recordId": record.id,
-            "sessionId": session_id,
-            "studentId": student_id,
-            "distanceMeters": distance,
-            "status": status,
-            "checkedInAt": record.checked_in_at,
-            "message": "Check-in processed successfully",
-        }
+        message = (
+            "Check-in successful (within range)"
+            if status == "PRESENT"
+            else "Check-in rejected (out of range)"
+        )
+
+        return CheckInResponse(
+            recordId=record.id,
+            sessionId=session_id,
+            studentId=student_id,
+            distanceMeters=distance,
+            status=status,
+            checkedInAt=record.checked_in_at,
+            message=message,
+        )
