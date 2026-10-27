@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
 from schemas.session_schema import CheckInRequest, SessionCreateRequest
-from services.attendance_service import open_session, process_checkin
+from services.session_service import open_session, process_checkin
 from utils.auth import AuthenticatedUser, get_current_user
 
 router = APIRouter(prefix="/api/sessions", tags=["Sessions"])
