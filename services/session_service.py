@@ -58,6 +58,15 @@ def process_checkin(session_id: int, student_id: int, lat: float, lng: float):
         if not section or student_id not in {s.id for s in section.students}:
             raise PermissionError("The student is not enrolled in this class section")
 
+        existing_record = db.scalar(
+            select(AttendanceRecord).where(
+                AttendanceRecord.session_id == session_id,
+                AttendanceRecord.student_id == student_id,
+            )
+        )
+        if existing_record:
+            raise FileExistsError("Student has already checked in for this session")
+
         center = (session.center_lat, session.center_lng)
         distance = round(haversine(center, (lat, lng), unit=Unit.METERS), 2)
 
