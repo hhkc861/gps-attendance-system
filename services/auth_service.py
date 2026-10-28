@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 
@@ -19,8 +19,16 @@ class InvalidCredentialsError(ValueError):
     pass
 
 
+def cleanup_expired_tokens() -> None:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    with get_session() as session:
+        session.execute(delete(RevokedToken).where(RevokedToken.expires_at <= now))
+        session.commit()
+
+
 def logout_user(token: str) -> None:
     payload = decode_access_token(token)
+    cleanup_expired_tokens()
     digest = token_digest(token)
     with get_session() as session:
         session.add(
