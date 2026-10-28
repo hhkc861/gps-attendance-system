@@ -1,14 +1,17 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
 
 from database import get_session
-from models import User
+from models import RevokedToken, User
 from schemas.auth_schema import LoginData, LoginRequest
 from schemas.user_schema import UserResponse
 from utils.security import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+    ACCESS_TOKEN_EXPIRE_SECONDS,
     create_access_token,
-    hash_password,
     verify_password,
+    decode_access_token,
+    token_digest,
 )
 
 
@@ -16,21 +19,48 @@ class InvalidCredentialsError(ValueError):
     pass
 
 
-# Perform password verification even if the username does not exist.
-_DUMMY_PASSWORD_HASH = hash_password("unused-login-timing-placeholder")
+def cleanup_expired_tokens() -> None:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    with get_session() as session:
+        session.execute(delete(RevokedToken).where(RevokedToken.expires_at <= now))
+        session.commit()
+
+
+def logout_user(token: str) -> None:
+    payload = decode_access_token(token)
+    cleanup_expired_tokens()
+    digest = token_digest(token)
+    with get_session() as session:
+        session.add(
+            RevokedToken(
+                token_hash=digest,
+                expires_at=datetime.fromtimestamp(payload["exp"], timezone.utc).replace(
+                    tzinfo=None
+                ),
+            )
+        )
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            # Concurrent logout requests may revoke the same token.
+            if session.get(RevokedToken, digest) is None:
+                raise
 
 
 def authenticate_user(login_data: LoginRequest) -> LoginData:
     with get_session() as session:
         user = session.scalar(select(User).where(User.username == login_data.username))
-        password_hash = user.password_hash if user is not None else _DUMMY_PASSWORD_HASH
-        password_valid = verify_password(login_data.password, password_hash)
-        if user is None or not password_valid:
+        if user is None:
+            raise InvalidCredentialsError("Username does not exist")
+
+        is_match = verify_password(login_data.password, user.password_hash)
+        if not is_match:
             raise InvalidCredentialsError("Invalid username or password")
 
         return LoginData(
-            accessToken=create_access_token({"sub": str(user.id)}),
-            expiresIn=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            accessToken=create_access_token(sub=str(user.id)),
+            expiresIn=ACCESS_TOKEN_EXPIRE_SECONDS,
             user=UserResponse(
                 id=user.id,
                 username=user.username,
@@ -39,8 +69,3 @@ def authenticate_user(login_data: LoginRequest) -> LoginData:
                 createdAt=user.created_at,
             ),
         )
-
-
-def logout_user():
-    # UC2: Log out
-    return True
