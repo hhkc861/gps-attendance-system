@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
-from schemas.session_schema import CheckInRequest, SessionCreateRequest
-from services.attendance_service import open_session, process_checkin
+from schemas.session_schema import CheckInRequest, CheckInResponse, SessionCreateRequest
+from services.session_service import open_session, process_checkin
 from utils.auth import AuthenticatedUser, get_current_user
 
 router = APIRouter(prefix="/api/sessions", tags=["Sessions"])
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/sessions", tags=["Sessions"])
             "description": "The request body does not match the schema"
         },
     },
-    summary="Open an attendance session (UC7)",
+    summary="Open an attendance session",
     description="Open a new attendance session for a class section using GPS coordinates, radius, and time window.\n\n"
     "Only teachers or administrators are permitted to create sessions.",
 )
@@ -67,14 +67,14 @@ def create_session(
 
 @router.post(
     "/{id}/check-in",
+    response_model=CheckInResponse,
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {
-            "description": "Check-in processed successfully"
+            "description": "Check-in processed successfully",
+            "model": CheckInResponse,
         },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Session is not currently active"
-        },
+        status.HTTP_400_BAD_REQUEST: {"description": "Session is not currently active"},
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Valid bearer authentication is required"
         },
@@ -88,7 +88,7 @@ def create_session(
             "description": "The request body does not match the schema"
         },
     },
-    summary="Process GPS check-in (UC9)",
+    summary="Process GPS check-in for a session",
     description="Process student GPS check-in against the session geofence.\n\n"
     "Calculates distance using the Haversine formula. If distance <= radius, status is PRESENT; "
     "otherwise status is REJECTED_OUT_OF_RANGE.",
@@ -102,7 +102,7 @@ def check_in(
         examples=[1],
     ),
     user: AuthenticatedUser = Depends(get_current_user),
-):
+) -> CheckInResponse:
     try:
         return process_checkin(
             session_id=id,

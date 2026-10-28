@@ -1,5 +1,6 @@
 import os
-
+from contextlib import contextmanager
+from typing import Generator
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,7 +15,7 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg://attendance:attendance@localhost:5432/gps_attendance",
 )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=10, max_overflow=20)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -52,5 +53,13 @@ def close_database() -> None:
     engine.dispose()
 
 
-def get_session() -> Session:
-    return SessionLocal()
+@contextmanager
+def get_session() -> Generator[Session, None, None]:
+    session = SessionLocal()
+    try:
+        yield session
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
