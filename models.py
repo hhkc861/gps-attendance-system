@@ -20,6 +20,13 @@ Base = declarative_base()
 UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
 
 
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(), nullable=False)
+
+
 section_teachers = Table(
     "section_teachers",
     Base.metadata,
