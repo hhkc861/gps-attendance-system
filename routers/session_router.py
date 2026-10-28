@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
-from sqlalchemy.exc import IntegrityError
-from schemas.session_schema import CheckInRequest, CheckInResponse, SessionCreateRequest
+from schemas.session_schema import (
+    CheckInRequest,
+    CheckInResponse,
+    SessionCreateRequest,
+    SessionResponse,
+)
 from services.session_service import open_session, process_checkin
 from utils.auth import AuthenticatedUser, get_current_user
 
@@ -37,7 +41,7 @@ router = APIRouter(prefix="/api/sessions", tags=["Sessions"])
 def create_session(
     req: SessionCreateRequest,
     user: AuthenticatedUser = Depends(get_current_user),
-):
+) -> SessionResponse:
     if user.role not in ("ADMIN", "TEACHER"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -52,7 +56,16 @@ def create_session(
             start_time=req.startTime,
             end_time=req.endTime,
         )
-        return {"success": True, "sessionId": session.id}
+        return SessionResponse(
+            id=session.id,
+            sectionId=session.section_id,
+            centerLat=session.center_lat,
+            centerLng=session.center_lng,
+            radiusMeters=session.radius_meters,
+            startTime=session.start_time,
+            endTime=session.end_time,
+            createdAt=session.created_at,
+        )
     except LookupError as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -83,6 +96,9 @@ def create_session(
         },
         status.HTTP_404_NOT_FOUND: {
             "description": "The attendance session could not be found"
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Student has already checked in for this session"
         },
         status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "The request body does not match the schema"
@@ -118,6 +134,11 @@ def check_in(
     except PermissionError as error:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(error),
+        )
+    except FileExistsError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
             detail=str(error),
         )
     except ValueError as error:

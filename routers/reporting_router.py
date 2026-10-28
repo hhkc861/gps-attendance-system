@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from schemas.reporting_schema import SectionReportResponse, SessionReportResponse
 from services.reporting_service import get_section_report, get_session_report
-from utils.auth import get_current_user
+from utils.auth import AuthenticatedUser, get_current_user
 
 router = APIRouter(prefix="/api/reports", tags=["Reporting"])
 
@@ -17,6 +17,9 @@ router = APIRouter(prefix="/api/reports", tags=["Reporting"])
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Valid bearer authentication is required"
         },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Only teachers or administrators can view attendance reports"
+        },
         status.HTTP_404_NOT_FOUND: {
             "description": "The attendance session could not be found"
         },
@@ -26,9 +29,7 @@ router = APIRouter(prefix="/api/reports", tags=["Reporting"])
     },
     summary="Get attendance report for a session",
     description="Retrieve a detailed attendance report for a specific session.\n\n"
-    "Includes student check-in status (PRESENT, REJECTED_OUT_OF_RANGE, ABSENT), "
-    "exact Haversine distance, and session statistics.",
-    dependencies=[Depends(get_current_user)],
+    "Aggregates total sessions held, student attendance breakdown, and overall attendance rates.",
 )
 def session_report(
     id: int = Path(
@@ -37,7 +38,13 @@ def session_report(
         description="The unique identifier of the attendance session.",
         examples=[1],
     ),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
+    if user.role not in ("ADMIN", "TEACHER"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers or administrators can view attendance reports",
+        )
     try:
         return get_session_report(id)
     except LookupError as error:

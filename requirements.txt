@@ -8,3 +8,5 @@ haversine
 SQLAlchemy
 psycopg
 httpx2
+pytest
+pytest-cov
