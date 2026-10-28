@@ -1,10 +1,21 @@
+from typing import cast
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+
 from database import get_session
 from models import AttendanceRecord, AttendanceSession, Section, User
+from schemas.reporting_schema import (
+    AttendanceStatus,
+    SectionReportResponse,
+    SessionReportResponse,
+    SessionStudentAttendanceItem,
+    StudentHistoryItem,
+    StudentReportResponse,
+    StudentSectionSummaryItem,
+)
 
 
-def get_session_report(session_id: int):
+def get_session_report(session_id: int) -> SessionReportResponse:
     with get_session() as db:
         session = db.get(AttendanceSession, session_id)
         if not session:
@@ -23,7 +34,7 @@ def get_session_report(session_id: int):
         ).all()
         records_map = {r.student_id: r for r in records}
 
-        student_items = []
+        student_items: list[SessionStudentAttendanceItem] = []
         present_cnt = 0
         rejected_cnt = 0
         absent_cnt = 0
@@ -44,34 +55,34 @@ def get_session_report(session_id: int):
                     absent_cnt += 1
 
                 student_items.append(
-                    {
-                        "studentId": student.id,
-                        "username": student.username,
-                        "fullName": student.full_name,
-                        "status": rec.status,
-                        "lat": rec.lat,
-                        "lng": rec.lng,
-                        "distanceMeters": rec.distance_meters,
-                        "checkedInAt": rec.checked_in_at,
-                        "isManuallyOverridden": rec.is_manually_overridden,
-                        "overrideReason": rec.override_reason,
-                    }
+                    SessionStudentAttendanceItem(
+                        studentId=student.id,
+                        username=student.username,
+                        fullName=student.full_name,
+                        status=cast(AttendanceStatus, rec.status),
+                        lat=rec.lat,
+                        lng=rec.lng,
+                        distanceMeters=rec.distance_meters,
+                        checkedInAt=rec.checked_in_at,
+                        isManuallyOverridden=rec.is_manually_overridden,
+                        overrideReason=rec.override_reason,
+                    )
                 )
             else:
                 absent_cnt += 1
                 student_items.append(
-                    {
-                        "studentId": student.id,
-                        "username": student.username,
-                        "fullName": student.full_name,
-                        "status": "ABSENT",
-                        "lat": None,
-                        "lng": None,
-                        "distanceMeters": None,
-                        "checkedInAt": None,
-                        "isManuallyOverridden": False,
-                        "overrideReason": None,
-                    }
+                    SessionStudentAttendanceItem(
+                        studentId=student.id,
+                        username=student.username,
+                        fullName=student.full_name,
+                        status="ABSENT",
+                        lat=None,
+                        lng=None,
+                        distanceMeters=None,
+                        checkedInAt=None,
+                        isManuallyOverridden=False,
+                        overrideReason=None,
+                    )
                 )
 
         total_enrolled = len(sorted_students)
@@ -81,26 +92,26 @@ def get_session_report(session_id: int):
             else 0.0
         )
 
-        return {
-            "sessionId": session.id,
-            "sectionId": section.id,
-            "sectionCode": section.section_code,
-            "centerLat": session.center_lat,
-            "centerLng": session.center_lng,
-            "radiusMeters": session.radius_meters,
-            "startTime": session.start_time,
-            "endTime": session.end_time,
-            "totalEnrolled": total_enrolled,
-            "presentCount": present_cnt,
-            "rejectedCount": rejected_cnt,
-            "absentCount": absent_cnt,
-            "excusedCount": excused_cnt,
-            "attendanceRate": rate,
-            "records": student_items,
-        }
+        return SessionReportResponse(
+            sessionId=session.id,
+            sectionId=section.id,
+            sectionCode=section.section_code,
+            centerLat=session.center_lat,
+            centerLng=session.center_lng,
+            radiusMeters=session.radius_meters,
+            startTime=session.start_time,
+            endTime=session.end_time,
+            totalEnrolled=total_enrolled,
+            presentCount=present_cnt,
+            rejectedCount=rejected_cnt,
+            absentCount=absent_cnt,
+            excusedCount=excused_cnt,
+            attendanceRate=rate,
+            records=student_items,
+        )
 
 
-def get_section_report(section_id: int):
+def get_section_report(section_id: int) -> SectionReportResponse:
     with get_session() as db:
         section = db.scalar(
             select(Section)
@@ -129,7 +140,7 @@ def get_section_report(section_id: int):
             if r.student_id in student_records:
                 student_records[r.student_id].append(r)
 
-        student_summaries = []
+        student_summaries: list[StudentSectionSummaryItem] = []
         total_present = 0
         sorted_students = sorted(section.students, key=lambda s: s.id)
 
@@ -149,17 +160,17 @@ def get_section_report(section_id: int):
             total_present += p_cnt
 
             student_summaries.append(
-                {
-                    "studentId": student.id,
-                    "username": student.username,
-                    "fullName": student.full_name,
-                    "totalSessions": total_sessions,
-                    "presentCount": p_cnt,
-                    "absentCount": a_cnt,
-                    "rejectedCount": r_cnt,
-                    "excusedCount": e_cnt,
-                    "attendanceRate": rate,
-                }
+                StudentSectionSummaryItem(
+                    studentId=student.id,
+                    username=student.username,
+                    fullName=student.full_name,
+                    totalSessions=total_sessions,
+                    presentCount=p_cnt,
+                    absentCount=a_cnt,
+                    rejectedCount=r_cnt,
+                    excusedCount=e_cnt,
+                    attendanceRate=rate,
+                )
             )
 
         total_possible = total_sessions * len(sorted_students)
@@ -169,17 +180,17 @@ def get_section_report(section_id: int):
             else 0.0
         )
 
-        return {
-            "sectionId": section.id,
-            "sectionCode": section.section_code,
-            "totalSessions": total_sessions,
-            "totalStudents": len(sorted_students),
-            "overallAttendanceRate": overall_rate,
-            "students": student_summaries,
-        }
+        return SectionReportResponse(
+            sectionId=section.id,
+            sectionCode=section.section_code,
+            totalSessions=total_sessions,
+            totalStudents=len(sorted_students),
+            overallAttendanceRate=overall_rate,
+            students=student_summaries,
+        )
 
 
-def get_student_report(student_id: int):
+def get_student_report(student_id: int) -> StudentReportResponse:
     with get_session() as db:
         student = db.get(User, student_id)
         if not student:
@@ -189,7 +200,7 @@ def get_student_report(student_id: int):
             select(AttendanceRecord).where(AttendanceRecord.student_id == student_id)
         ).all()
 
-        history = []
+        history: list[StudentHistoryItem] = []
         attended_count = 0
 
         for r in records:
@@ -199,26 +210,26 @@ def get_student_report(student_id: int):
                 attended_count += 1
 
             history.append(
-                {
-                    "sessionId": r.session_id,
-                    "sectionCode": section.section_code if section else "N/A",
-                    "sessionTime": session.start_time if session else r.checked_in_at,
-                    "status": r.status,
-                    "distanceMeters": r.distance_meters,
-                    "checkedInAt": r.checked_in_at,
-                    "isManuallyOverridden": r.is_manually_overridden,
-                }
+                StudentHistoryItem(
+                    sessionId=r.session_id,
+                    sectionCode=section.section_code if section else "N/A",
+                    sessionTime=session.start_time if session else r.checked_in_at,
+                    status=cast(AttendanceStatus, r.status),
+                    distanceMeters=r.distance_meters,
+                    checkedInAt=r.checked_in_at,
+                    isManuallyOverridden=r.is_manually_overridden,
+                )
             )
 
         total = len(history)
         rate = round((attended_count / total * 100), 2) if total > 0 else 0.0
 
-        return {
-            "studentId": student.id,
-            "username": student.username,
-            "fullName": student.full_name,
-            "totalSessions": total,
-            "attendedSessions": attended_count,
-            "attendanceRate": rate,
-            "history": history,
-        }
+        return StudentReportResponse(
+            studentId=student.id,
+            username=student.username,
+            fullName=student.full_name,
+            totalSessions=total,
+            attendedSessions=attended_count,
+            attendanceRate=rate,
+            history=history,
+        )
