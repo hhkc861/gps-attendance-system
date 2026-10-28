@@ -6,8 +6,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 
 from database import get_session
-from models import User, UserRole
-from utils.security import decode_access_token
+from models import RevokedToken, User, UserRole
+from utils.security import decode_access_token, token_digest
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -36,6 +36,8 @@ def get_current_user(
         raise unauthorized from None
 
     with get_session() as session:
+        if session.get(RevokedToken, token_digest(credentials.credentials)) is not None:
+            raise unauthorized
         user = session.execute(
             select(User.id, User.role).where(User.id == user_id)
         ).one_or_none()

@@ -1,4 +1,6 @@
 import os
+from hashlib import sha256
+from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -29,10 +31,15 @@ def create_access_token(data: dict[str, Any]) -> str:
         raise RuntimeError("JWT_SECRET must contain at least 32 characters")
 
     payload = data.copy()
+    payload["jti"] = str(uuid4())
     payload["exp"] = datetime.now(timezone.utc) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
     return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def token_digest(token: str) -> str:
+    return sha256(token.encode("utf-8")).hexdigest()
 
 
 def decode_access_token(token: str) -> dict[str, Any]:

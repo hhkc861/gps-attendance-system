@@ -1,7 +1,9 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
 
 from database import get_session
-from models import User
+from models import RevokedToken, User
 from schemas.auth_schema import LoginData, LoginRequest
 from schemas.user_schema import UserResponse
 from utils.security import (
@@ -9,11 +11,30 @@ from utils.security import (
     create_access_token,
     hash_password,
     verify_password,
+    decode_access_token,
+    token_digest,
 )
 
 
 class InvalidCredentialsError(ValueError):
     pass
+
+
+def logout_user(token: str) -> None:
+    payload = decode_access_token(token)
+    digest = token_digest(token)
+    with get_session() as session:
+        session.add(RevokedToken(
+            token_hash=digest,
+            expires_at=datetime.fromtimestamp(payload["exp"], timezone.utc).replace(tzinfo=None),
+        ))
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            # Concurrent logout requests may revoke the same token.
+            if session.get(RevokedToken, digest) is None:
+                raise
 
 
 # Perform password verification even if the username does not exist.
@@ -39,8 +60,3 @@ def authenticate_user(login_data: LoginRequest) -> LoginData:
                 createdAt=user.created_at,
             ),
         )
-
-
-def logout_user():
-    # UC2: Log out
-    return True
