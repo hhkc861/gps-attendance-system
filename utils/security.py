@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 password_hasher = PasswordHasher()
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+ACCESS_TOKEN_EXPIRE_SECONDS = 1800
 
 
 def hash_password(password: str) -> str:
@@ -25,15 +26,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-def create_access_token(data: dict[str, Any]) -> str:
+def create_access_token(**kwargs) -> str:
     secret = os.getenv("JWT_SECRET")
     if not secret or len(secret) < 32:
         raise RuntimeError("JWT_SECRET must contain at least 32 characters")
 
-    payload = data.copy()
+    payload = kwargs.copy()
     payload["jti"] = str(uuid4())
     payload["exp"] = datetime.now(timezone.utc) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        seconds=ACCESS_TOKEN_EXPIRE_SECONDS
     )
     return jwt.encode(payload, secret, algorithm="HS256")
 
