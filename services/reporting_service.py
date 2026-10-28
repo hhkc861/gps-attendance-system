@@ -14,6 +14,15 @@ from schemas.reporting_schema import (
     StudentSectionSummaryItem,
 )
 
+from schemas.reporting_schema import (
+    SessionStudentAttendanceItem,
+    SessionReportResponse,
+    StudentSectionSummaryItem,
+    SectionReportResponse,
+    StudentHistoryItem,
+    StudentReportResponse,
+)
+
 
 def get_session_report(session_id: int) -> SessionReportResponse:
     with get_session() as db:
@@ -59,7 +68,7 @@ def get_session_report(session_id: int) -> SessionReportResponse:
                         studentId=student.id,
                         username=student.username,
                         fullName=student.full_name,
-                        status=cast(AttendanceStatus, rec.status),
+                        status=rec.status,
                         lat=rec.lat,
                         lng=rec.lng,
                         distanceMeters=rec.distance_meters,
@@ -76,12 +85,6 @@ def get_session_report(session_id: int) -> SessionReportResponse:
                         username=student.username,
                         fullName=student.full_name,
                         status="ABSENT",
-                        lat=None,
-                        lng=None,
-                        distanceMeters=None,
-                        checkedInAt=None,
-                        isManuallyOverridden=False,
-                        overrideReason=None,
                     )
                 )
 
@@ -214,7 +217,7 @@ def get_student_report(student_id: int) -> StudentReportResponse:
                     sessionId=r.session_id,
                     sectionCode=section.section_code if section else "N/A",
                     sessionTime=session.start_time if session else r.checked_in_at,
-                    status=cast(AttendanceStatus, r.status),
+                    status=r.status,
                     distanceMeters=r.distance_meters,
                     checkedInAt=r.checked_in_at,
                     isManuallyOverridden=r.is_manually_overridden,
