@@ -10,14 +10,15 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from schemas.session_schema import AttendanceStatus
+from schemas.user_schema import UserRole
+
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 Base = declarative_base()
-
-UserRole = Literal["ADMIN", "TEACHER", "STUDENT"]
 
 
 section_teachers = Table(
@@ -134,7 +135,7 @@ class AttendanceRecord(Base):
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
     distance_meters: Mapped[float] = mapped_column(Float, nullable=False)
-    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    status: Mapped[AttendanceStatus] = mapped_column(String(30), nullable=False)
     checked_in_at: Mapped[datetime] = mapped_column(
         DateTime(),
         nullable=False,
