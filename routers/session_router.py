@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/sessions", tags=["Sessions"])
             "description": "The request body does not match the schema"
         },
     },
-    summary="Open an attendance session (UC7)",
+    summary="Open an attendance session",
     description="Open a new attendance session for a class section using GPS coordinates, radius, and time window.\n\n"
     "Only teachers or administrators are permitted to create sessions.",
 )
@@ -74,9 +74,7 @@ def create_session(
             "description": "Check-in processed successfully",
             "model": CheckInResponse,
         },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Session is not currently active"
-        },
+        status.HTTP_400_BAD_REQUEST: {"description": "Session is not currently active"},
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Valid bearer authentication is required"
         },
@@ -90,7 +88,7 @@ def create_session(
             "description": "The request body does not match the schema"
         },
     },
-    summary="Process GPS check-in (UC9)",
+    summary="Process GPS check-in for a session",
     description="Process student GPS check-in against the session geofence.\n\n"
     "Calculates distance using the Haversine formula. If distance <= radius, status is PRESENT; "
     "otherwise status is REJECTED_OUT_OF_RANGE.",
