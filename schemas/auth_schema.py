@@ -18,7 +18,7 @@ class LoginRequest(BaseModel):
     password: str = Field(
         min_length=1,
         title="Password",
-        description="The account password. Whitespace is preserved.",
+        description="The account password. Surrounding whitespace is preserved.",
         examples=["ExamplePassword123!"],
         json_schema_extra={"format": "password", "writeOnly": True},
     )
@@ -45,6 +45,9 @@ class LoginData(BaseModel):
     accessToken: str = Field(
         title="Access token",
         description="The JWT used to access protected endpoints.",
+        examples=[
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNCIsImV4cCI6MTc5MzA3Nzg4OX0.4gKEr5Mwvx8Q9ySlXSZrs9crwSZbzpcCs5qidD6ZmNE",
+        ],
     )
     tokenType: Literal["Bearer"] = Field(
         default="Bearer",

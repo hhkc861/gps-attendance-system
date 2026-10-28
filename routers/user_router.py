@@ -15,7 +15,7 @@ from services.user_service import (
     list_users,
 )
 from sqlalchemy.exc import IntegrityError
-from utils.auth import require_admin
+from utils.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
@@ -58,11 +58,15 @@ def create_user(user_request: UserCreateRequest) -> UserResponse:
 @router.get(
     "",
     response_model=UserListResponse,
+    dependencies=[Depends(get_current_user)],
     summary="List user accounts",
     description="Return user accounts with optional role and text filters, plus pagination.",
     responses={
         status.HTTP_200_OK: {
             "description": "The matching accounts were returned successfully."
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "A valid bearer token is required."
         },
         status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "A query parameter is outside its allowed range."
