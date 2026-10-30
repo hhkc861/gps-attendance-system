@@ -4,7 +4,7 @@
 > WORKING IN PROGRESS
 >
 
-Kho lưu trữ (repository) này cung cấp phần backend xây dựng bằng FastAPI cho hệ thống điểm danh lớp học dựa trên định vị GPS. Giáo viên có thể mở các phiên điểm danh cho một lớp học, sinh viên có thể thực hiện điểm danh từ một vùng địa lý (geofence) đã được thiết lập, và hệ thống sẽ xuất báo cáo điểm danh theo từng phiên hoặc theo từng lớp học phần.
+Repository cung cấp phần backend xây dựng bằng FastAPI cho hệ thống điểm danh lớp học dựa trên định vị GPS. Giáo viên có thể mở các phiên điểm danh cho một lớp học, sinh viên có thể thực hiện điểm danh từ một vùng địa lý (geofence) đã được thiết lập, và hệ thống sẽ xuất báo cáo điểm danh theo từng phiên hoặc theo từng lớp học phần.
 
 ## Các tính năng của API
 
@@ -78,7 +78,7 @@ Token sẽ hết hạn sau 30 phút hoặc khi người dùng thực hiện thao
 
 ## Các endpoint chính
 
-| Lĩnh vực | Endpoint | Mục đích |
+| Phân loại | Endpoint | Mục đích |
 |---|---|---|
 | Auth | `POST /api/auth/login` | Đăng nhập và nhận JWT token |
 | Auth | `POST /api/auth/logout` | Đăng xuất token hiện tại |
