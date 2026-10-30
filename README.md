@@ -17,7 +17,7 @@ Kho lưu trữ (repository) này cung cấp phần backend xây dựng bằng Fa
 - Xuất báo cáo điểm danh theo từng phiên và theo từng lớp học phần
 - Hỗ trợ thu hồi token (token revocation) khi đăng xuất
 
-## Tech stack (Công nghệ sử dụng)
+## Sử dụng
 
 - Python 3
 - FastAPI
@@ -26,7 +26,7 @@ Kho lưu trữ (repository) này cung cấp phần backend xây dựng bằng Fa
 - JWT authentication
 - Docker Compose for PostgreSQL
 
-## Quick start (Bắt đầu chạy)
+## Bắt đầu chạy
 
 1. Cài đặt Docker Desktop và đảm bảo ứng dụng đang chạy.
 2. Sao chép và đổi tên tệp `.env.example` thành  `.env`
@@ -78,7 +78,7 @@ Token sẽ hết hạn sau 30 phút hoặc khi người dùng thực hiện thao
 
 ## Các endpoint chính
 
-| Phân loại | Endpoint | Mục đích |
+| Lĩnh vực | Endpoint | Mục đích |
 |---|---|---|
 | Auth | `POST /api/auth/login` | Đăng nhập và nhận JWT token |
 | Auth | `POST /api/auth/logout` | Đăng xuất token hiện tại |
@@ -122,9 +122,5 @@ Token sẽ hết hạn sau 30 phút hoặc khi người dùng thực hiện thao
 | Nghiệp vụ | Điểm danh thủ công (Manual Override) | Cho phép giáo viên can thiệp sửa trạng thái điểm danh cho sinh viên gặp sự cố hỏng máy, hết pin. |
 | Báo cáo & Dữ liệu | Import/Export Excel & CSV | Hỗ trợ admin nhập hàng loạt sinh viên vào lớp và cho phép giáo viên xuất báo cáo điểm danh ra file `.xlsx` / `.pdf`. |
 | Báo cáo & Dữ liệu | Cảnh báo học vụ tự động | Tự động tính tỷ lệ chuyên cần và gắn cờ cảnh báo các sinh viên nghỉ quá 20% số buổi (nguy cơ cấm thi). |
-| Hệ thống | Bổ sung Refresh Token | Duy trì phiên đăng nhập cho người dùng mượt mà hơn thay vì bị ngắt kết nối sau mỗi 30 phút. |
-| Hệ thống | Tích hợp Redis | Lưu trữ danh sách token đã thu hồi (blacklist), cache cấu hình session đang mở và hỗ trợ Rate Limiting chống spam API. |
 | Hệ thống | Cập nhật thời gian thực (WebSocket / SSE) | Hiển thị danh sách sinh viên vừa điểm danh thành công lên màn hình giáo viên theo thời gian thực. |
 | Hệ thống | Tác vụ chạy nền (Background Tasks) | Tự động quét và chốt trạng thái `ABSENT` cho các sinh viên không điểm danh ngay khi hết khung giờ session. |
-| Hạ tầng | Database Migration (Alembic) | Quản lý lịch sử và cập nhật schema cơ sở dữ liệu PostgreSQL một cách có hệ thống. |
-| Hạ tầng | Full Dockerization | Đưa toàn bộ mã nguồn FastAPI vào file `docker-compose.yml` để dễ dàng đóng gói và triển khai CI/CD. |
